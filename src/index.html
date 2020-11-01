@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="static/js/vue.global.js"></script>
+    <link rel="stylesheet" href="static/antd@2.0.0-beta.10/antd.min.css">
+    <script src="static/js/moment.js"></script>
+    <script src="static/antd@2.0.0-beta.10/antd.min.js"></script>
+
+    <script src="component/children1.js"></script>
+    <script src="component/children2.js"></script>
+</head>
+<body>
+    <div id="App">
+        <div style="border: 1px solid lightgreen;margin: 10px;padding: 10px">
+            <a-button type="primary">
+                Primary
+            </a-button>
+            <a-select mode="tags" style="width: 100%" placeholder="Tags Mode" @change="handleChange">
+                <a-select-option v-for="i in 25" :key="(i + 9).toString(36) + i">
+                    {{ (i + 9).toString(36) + i }}
+                </a-select-option>
+            </a-select>
+        </div>
+
+
+        <children1 age="18" @chch="childrenEmit"></children1>
+
+        <children2></children2>
+
+        <p ref="myRef" style="color: blue;">{{name}} ==== {{age}}</p>
+        <p style="color: blue;">{{dealName}} ==== {{age}}</p>
+        <p style="color: blue;">{{object}}</p>
+        <p style="color: blue;">{{dealObject}}</p>
+
+        <button @click="button1">button 1</button>
+        <button @click="button2">button 2</button>
+    </div>
+</body>
+<script>
+    const createApp = Vue.createApp,
+        ref = Vue.ref,
+        reactive = Vue.reactive,
+        computed = Vue.computed,
+        readonly = Vue.readonly,
+        watchEffect = Vue.watchEffect,
+        toRef = Vue.toRef,
+        toRefs = Vue.toRefs,
+        toRaw = Vue.toRaw,
+        onBeforeUpdate = Vue.onBeforeUpdate,
+        onMounted = Vue.onMounted,
+        onBeforeMount = Vue.onBeforeMount,
+        onUpdated = Vue.onUpdated,
+        onBeforeUnmount = Vue.onBeforeUnmount,
+        onUnmounted = Vue.onUnmounted,
+        onErrorCaptured = Vue.onErrorCaptured,
+        onRenderTracked = Vue.onRenderTracked,
+        onRenderTriggered = Vue.onRenderTriggered,
+        getCurrentInstance = Vue.getCurrentInstance,
+        provide = Vue.provide,
+        inject = Vue.inject
+
+    var app = createApp({
+        name: 'app',
+        data(){
+            return {
+                age: 18
+            }
+        },
+        methods: {
+            button1() {
+                this.age += 1;
+            },
+            button2() {
+                this.name += 'A'
+            }
+        },
+
+        // -------------------------------
+
+        props: {
+            name: String,
+        },
+
+        components: {
+            'children2': children2,
+        },
+
+        setup(props,ctx) {
+
+            const instance = getCurrentInstance();
+            console.log('index-instance', instance);
+
+            // ref、reactive、computed
+            const name = ref(0);
+            const object = reactive({ foo: 'bar' });
+            const copy = readonly({age: 18})
+            const dealObject = computed(()=>{
+                let o = JSON.parse(JSON.stringify(object));
+                o.mark = 'xiaoWang';
+                return o;
+            });
+            const dealName = computed(()=> name.value + 'A');
+            setTimeout(() => {
+                object.mark = 'Li'
+                name.value += 'B'
+            }, 3000);
+            copy.age += 1;
+            console.log('age', copy.age)
+
+            // watchEffect
+            const watchEff = ref(1);
+            const stop = watchEffect(
+                () => console.log('name=>', watchEff.value),
+                {
+                    onTrigger(e) {
+                        console.log('onTrigger')
+                    }
+                }
+            )
+            setInterval(() => {
+                watchEff.value += 1
+                if (watchEff.value > 6) {
+                    stop()
+                }
+            }, 1000);
+            const myRef = ref(null)
+            onMounted(()=>{
+                console.log('onMounted 第一个onMounted函数 ....')
+                watchEffect(()=>{
+                    console.log('myRef : ', myRef.value)
+                })
+            })
+
+            // 响应式系统工具集
+            // toRef
+            const state = reactive({
+                foo: 1,
+                bar: 2,
+                obj: {
+                    name: 'li',
+                    age: 18,
+                }
+            })
+            const o = reactive({
+                x: 100,
+                y: 200,
+            })
+            console.log('o : ', o);
+            const fooRef = toRef(state, 'obj')
+            console.log('toRef : ', fooRef)
+
+            // toRefs
+            const state1 = reactive({
+                foo: 1,
+                bar: 2,
+            })
+            const stateAsRefs = toRefs(state1)
+            console.log('toRefs', stateAsRefs)
+
+            // toRaw
+            const A = {
+                foo: 1,
+                bar: 2,
+            }
+            const state2 = reactive(A)
+            const stateToRaw = toRaw(state2)
+            console.log('toRaw', stateToRaw === A)
+
+            // 生命周期
+            onBeforeMount(()=>{
+                console.log('onBeforeMount ...')
+            })
+            onMounted(()=>{
+                console.log('onMounted ...')
+            })
+            onBeforeUpdate(()=>{
+                console.log('onBeforeUpdate ...')
+            })
+            onUpdated(()=>{
+                console.log('onUpdated ...')
+            })
+            onBeforeUnmount(()=>{
+                console.log('onBeforeUnmount ...')
+            })
+            onUnmounted(()=>{
+                console.log('onUnmounted ...')
+            })
+            onErrorCaptured(()=>{
+                console.log('onErrorCaptured ...')
+            })
+            onRenderTracked(()=>{
+                console.log('onRenderTracked ...')
+            })
+            onRenderTriggered(()=>{
+                console.log('onRenderTriggered ...')
+            })
+
+            // provide/inject
+            provide('childrenTitle', '评论区')
+            provide('arrayChildren', [1,2,3])
+
+            // emit
+            const childrenEmit  = ()=>{
+                console.log('')
+                console.log('1111111111111111111')
+                console.log('')
+                alert('父组件已接收到!')
+            }
+
+            // antd2.x
+            const handleChange = (value)=>{
+                console.log(`selected ${value}`);
+            };
+
+            return {
+                name, 
+                object,
+                dealObject,
+                dealName,
+                myRef,
+                childrenEmit,
+                handleChange
+            };
+        },
+
+    })
+    .component('children1', children1)
+    .use(antd)
+    .mount('#App')
+</script>
+</html>
